@@ -1,66 +1,204 @@
-
-
-
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
-
-  <meta charset="utf-8" />
-  <meta name="author" content="MB" />
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Kryptoanalyse</title>
-
-  <link href="https://inf-schule.de/assets/thirdparty/prism/prism.css" rel="stylesheet"><link href="https://inf-schule.de/assets/css/styles.css" rel="stylesheet"><link href="https://inf-schule.de/assets/thirdparty/photoswipe/photoswipe.css" rel="stylesheet"><link href="https://inf-schule.de/assets/thirdparty/photoswipe/default-skin/default-skin.css" rel="stylesheet"><link href="https://inf-schule.de/assets/thirdparty/mediaelementjs/mediaelementplayer.min.css" rel="stylesheet"><link href="https://inf-schule.de/assets/thirdparty/kryptoanalyse-monoalphabetisch/kryptoanalyse-monoalphabetisch.css" rel="stylesheet">
-  <link rel="manifest" href="https://inf-schule.de/assets/img/favicon/manifest.json">
-  <meta name="msapplication-TileColor" content="#ffffff">
-  <meta name="msapplication-TileImage" content="https://inf-schule.de/assets/img/favicon/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-
+  <meta charset="UTF-8" />
+  <title>Caesar-Chiffre Analyse</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; display: flex; justify-content: center; }
+    .container { max-width: 1100px; width: 100%; }
+    textarea {
+      width: 100%;
+      height: 180px;
+      resize: none; /* feste Größe */
+    }
+    textarea[readonly] { background: #f5f5f5; cursor: not-allowed; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    .row { margin-bottom: 20px; }
+    .text-row {
+      display: flex;
+      gap: 20px;
+    }
+    .text-row > div {
+      flex: 1;
+    }
+    .key-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .key-controls button {
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+    }
+    .analysis-row {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    canvas {
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
+<body>
 
-<!--[if lt IE 10]><body class="ie"><![endif]-->
-<!--[if !IE]><!-->
+<div class="container">
 
-<body class="nicht-startseite"><!-- <![endif]-->
+<h1>Caesar-Chiffre – Analyse & Entschlüsselung</h1>
 
-
-
-
-
-<div :class="{fullscreenDisabled: !fullscreen}" class="toolbox toolbox--fullscreen">
-  <a v-on:click="toggleFullscreen" class="toolbox__tool toolbox__tool--fullscreen" href="">i</a>
-</div>
-<article :class="{fullscreenMaxWidth: fullscreen}" class="animate article article--project">
-
-  <div class="wrapper wrapper--article wrapper--project">
-
-
-<h1>Sprinteraufgaben</h1>
-<h3>Aufgabe 1</h3>
-<p>Kopiere den Text und lass die Anzahl der Buchstaben zählen. Was fällt dir auf?</p>
-<p>XWPP DIE LXXW KRYPTOANALYSE BVX HAT XQWZ HIER KLX KEINE PXXQ CHANCE XOWXW</p>
-
-<div class="kryptoanalyse-monoalphabetisch interaktiv" zeigetabelle="nein" zeigetextausgabe="nein" zeige2gramme3gramme="nein" zeigebuttonautomatischezuordnung="nein">    
+<div class="row text-row">
+  <div>
+    <label>Verschlüsselter Text</label>
+    <textarea id="ciphertext"></textarea>
+  </div>
+  <div>
+    <label>Entschlüsselter Text</label>
+    <textarea id="plaintext" readonly></textarea>
+  </div>
 </div>
 
-<h3>Aufgabe 2</h3>
-<p>Ist die Cäsar-Verschlüsselung geeignet, um WhatsApp-Nachrichten zu verschlüssseln?</p>
-
+<div class="row">
+  <label>Schlüssel</label>
+  <div class="key-controls">
+    <button id="keyDown">&lt;</button>
+    <span id="keyValue">0</span>
+    <button id="keyUp">&gt;</button>
+  </div>
 </div>
 
 
-</article>
 
+<div class="row analysis-row">
+  <div>
+    <label>Häufigkeitsanalyse</label>
+    <canvas id="freqChart" width="500" height="300"></canvas>
+  </div>
+  <div>
+    <label>Cäsarscheibe</label>
+    <canvas id="wheelCanvas" width="300" height="300"></canvas>
+  </div>
+</div>
 
+<script>
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let key = 0;
 
-<script src="https://inf-schule.de/assets/thirdparty/jquery/jquery.min.js"></script><script src="https://inf-schule.de/assets/thirdparty/jquery/jquery-ui.min.js"></script><script src="https://inf-schule.de/assets/thirdparty/photoswipe/photoswipe.min.js"></script><script src="https://inf-schule.de/assets/thirdparty/photoswipe/photoswipe-ui-default.min.js"></script><script src="https://inf-schule.de/assets/thirdparty/photoswipe/photoswipe--custom.js"></script><script src="https://inf-schule.de/assets/thirdparty/foundation-responsive-tables/responsive-tables.js"></script><script src="https://inf-schule.de/assets/thirdparty/clipboard.min.js"></script><script src="https://inf-schule.de/assets/thirdparty/prism/prism.js"></script><script src="https://inf-schule.de/assets/thirdparty/slick/slick.js"></script><script src="https://inf-schule.de/assets/thirdparty/vue/vue3.global.js"></script><script src="https://inf-schule.de/assets/thirdparty/vue/vue-cookies.js"></script><script src="https://inf-schule.de/assets/js/script.js"></script><script src="https://inf-schule.de/assets/js/app.js"></script><script src="https://inf-schule.de/assets/js/components/project-tiles/app.js"></script><script src="https://inf-schule.de/assets/js/components/filtered-search/app.js"></script><script src="https://inf-schule.de/assets/thirdparty/mediaelementjs/mediaelement-and-player.min.js"></script><script src="https://inf-schule.de/assets/js/video.js"></script><script src="https://inf-schule.de/assets/thirdparty/caesar-verfahren/caesar-verfahren.js"></script><script src="https://inf-schule.de/assets/thirdparty/chiffrierscheibe/chiffrierscheibe.js"></script><script src="https://inf-schule.de/assets/thirdparty/kryptoanalyse-monoalphabetisch/kryptoanalyse-monoalphabetisch.js"></script>
+const cipherInput = document.getElementById('ciphertext');
+const plainOutput = document.getElementById('plaintext');
+const keyValue = document.getElementById('keyValue');
 
+const freqCanvas = document.getElementById('freqChart');
+const freqCtx = freqCanvas.getContext('2d');
 
-<!-- End Matomo Tracking Code -->
+const wheelCanvas = document.getElementById('wheelCanvas');
+const wheelCtx = wheelCanvas.getContext('2d');
+
+function decrypt(text, key) {
+  return text.split('').map(ch => {
+    const idx = alphabet.indexOf(ch.toUpperCase());
+    if (idx === -1) return ch;
+    const p = (idx - key + 26) % 26;
+    return alphabet[p]; // immer Großbuchstaben im Klartext
+  }).join('');
+}
+
+function drawFrequency(text) {
+  const counts = Array(26).fill(0);
+  text.toUpperCase().replace(/[^A-Z]/g, '').split('').forEach(ch => {
+    counts[ch.charCodeAt(0) - 65]++;
+  });
+
+  freqCtx.clearRect(0, 0, freqCanvas.width, freqCanvas.height);
+  const max = Math.max(...counts, 1);
+  const barWidth = freqCanvas.width / 26;
+
+  counts.forEach((count, i) => {
+    const barHeight = (count / max) * (freqCanvas.height - 20);
+    freqCtx.fillStyle = '#4a90e2';
+    freqCtx.fillRect(i * barWidth, freqCanvas.height - barHeight, barWidth - 2, barHeight);
+    freqCtx.fillStyle = '#000';
+    freqCtx.fillText(alphabet[i], i * barWidth + 5, freqCanvas.height - 5);
+  });
+}
+
+function drawWheel(key) {
+  const cx = wheelCanvas.width / 2;
+  const cy = wheelCanvas.height / 2;
+  const rOuter = 130;
+  const rInner = 90;
+
+  wheelCtx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+
+  wheelCtx.strokeStyle = '#000';
+  wheelCtx.beginPath();
+  wheelCtx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+  wheelCtx.arc(cx, cy, rInner, 0, Math.PI * 2);
+  wheelCtx.stroke();
+
+  for (let i = 0; i < 26; i++) {
+    const angle = (i / 26) * Math.PI * 2 - Math.PI / 2;
+
+    // outer (plaintext)
+    wheelCtx.font = '14px Arial';
+    wheelCtx.fillText(
+      alphabet[i],
+      cx + Math.cos(angle) * rOuter * 0.9 - 5,
+      cy + Math.sin(angle) * rOuter * 0.9 + 5
+    );
+
+    // inner (ciphertext)
+    const ci = (i + key) % 26;
+    wheelCtx.font = '12px Arial';
+    wheelCtx.fillText(
+      alphabet[ci].toLowerCase(),
+      cx + Math.cos(angle) * rInner * 0.9 - 4,
+      cy + Math.sin(angle) * rInner * 0.9 + 4
+    );
+  }
+}
+
+function normalizeCipherInput(text) {
+  return text
+    .replace(/ß/g, 'ss')
+    .toLowerCase();
+}
+
+function update() {
+  // Eingabetext normalisieren
+  const normalized = normalizeCipherInput(cipherInput.value);
+  if (cipherInput.value !== normalized) {
+    const pos = cipherInput.selectionStart;
+    cipherInput.value = normalized;
+    cipherInput.selectionStart = cipherInput.selectionEnd = pos;
+  }
+
+  keyValue.textContent = key;
+  const cipher = cipherInput.value;
+  plainOutput.value = decrypt(cipher, key);
+  drawFrequency(cipher);
+  drawWheel(key);
+}
+
+// key buttons
+
+document.getElementById('keyUp').onclick = () => {
+  key = (key + 1) % 26;
+  update();
+};
+
+document.getElementById('keyDown').onclick = () => {
+  key = (key + 25) % 26; // -1 modulo 26
+  update();
+};
+
+cipherInput.addEventListener('input', update);
+
+update();
+</script>
+
+</div>
 
 </body>
 </html>
